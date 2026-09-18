@@ -1,8 +1,9 @@
 // All user-facing content for the Waypoint prototype, in English and Chinese.
 // Every claim about the Australian system is written as a step or a plain explanation,
 // never as a diagnosis or a price promise. Each step names who does it and where it came from.
+// Deadline rules live in `clocks` and name a source; the README lists what the team still has to verify.
 
-export const CONTENT_DATE = '2026-09-04'
+export const CONTENT_DATE = '2026-09-18'
 
 export const ui = {
   appName: { en: 'Waypoint', zh: 'Waypoint' },
@@ -24,11 +25,15 @@ export const ui = {
     },
     notesLink: { en: 'Open my notes', zh: '打开我的笔记' },
     termsLink: { en: 'Look up a term', zh: '查一个术语' },
+    loopsTitle: { en: 'Dates to watch', zh: '要盯的日期' },
+    loopsMore: { en: 'See all dates', zh: '查看全部日期' },
+    pendingOne: { en: 'date still to enter', zh: '个日期还没填' },
+    pendingMany: { en: 'dates still to enter', zh: '个日期还没填' },
   },
   stages: {
     before: {
       title: { en: 'Before you go', zh: '去之前' },
-      q: { en: 'Which service? What will it cost? How do I book?', zh: '去哪种诊所？花多少钱？怎么预约？' },
+      q: { en: 'What do I ask when I book? Which service? What will it cost?', zh: '预约时问什么？去哪种诊所？花多少钱？' },
     },
     visit: {
       title: { en: 'At the appointment', zh: '看医生时' },
@@ -36,14 +41,19 @@ export const ui = {
     },
     after: {
       title: { en: 'After the doctor', zh: '看完医生' },
-      q: { en: 'I have a prescription, a referral, a receipt. Now what?', zh: '手里有处方、转诊信、收据，然后呢？' },
+      q: { en: 'I have a prescription, a referral, a receipt. What next, and by when?', zh: '手里有处方、转诊信、收据，然后呢？什么时候之前？' },
     },
   },
   before: {
     sections: {
-      services: { en: 'Which service', zh: '去哪里' },
-      cost: { en: 'Cost & OSHC', zh: '费用与 OSHC' },
-      booking: { en: 'Booking', zh: '预约' },
+      ask: { en: 'Ask first', zh: '先问' },
+      services: { en: 'Where', zh: '去哪' },
+      cost: { en: 'Cost', zh: '费用' },
+      bring: { en: 'Bring', zh: '带什么' },
+    },
+    askLead: {
+      en: 'Ask these when you book, before you go. They settle the two things that caused the most surprises in our interviews: whether the clinic bills OSHC directly, and what the visit will cost. Tap a question to copy the English.',
+      zh: '预约时就问，别等到了再问。访谈里最让学生意外的两件事，诊所是否和 OSHC 直接结算、这次看病要花多少钱，问了就清楚。点一下可以复制英文。',
     },
     servicesLead: {
       en: 'Four places students end up. This guide does not judge how serious your symptoms are: if you are unsure, use the Healthdirect Symptom Checker or call 1800 022 222, 24 hours. In Queensland you can also call 13 HEALTH on 13 43 25 84.',
@@ -51,17 +61,27 @@ export const ui = {
     },
     emergency: { en: 'Emergency? Call 000.', zh: '紧急情况？拨打 000。' },
     costLead: {
-      en: 'You cannot know the exact cost in advance unless you ask. Here is how the money moves, and the two questions that settle it.',
-      zh: '不问就没法提前知道确切费用。下面是钱怎么走的，以及两个问清楚就够的问题。',
+      en: 'You cannot know the exact cost in advance unless you ask. Here is how the money moves.',
+      zh: '不问就没法提前知道确切费用。下面是钱怎么走的。',
     },
-    askTitle: { en: 'Ask the clinic when you book', zh: '预约时问诊所' },
-    bookingLead: {
-      en: 'Most clinics take online bookings. Have these ready.',
-      zh: '大多数诊所可以网上预约。准备好这些。',
+    bringLead: {
+      en: 'Most clinics take online bookings. Have these ready on the day.',
+      zh: '大多数诊所可以网上预约。当天准备好这些。',
+    },
+    nearTitle: { en: 'Near campus', zh: '校园附近' },
+    nearLead: {
+      en: 'Confirmed by the team by phone on the date shown. Fees and billing can change, so ask again when you book.',
+      zh: '团队在所示日期电话确认过。收费和结算方式可能变，预约时再问一次。',
     },
     whatLabel: { en: 'What it is for', zh: '管什么' },
     costLabel: { en: 'Cost', zh: '费用' },
     tipLabel: { en: 'Tip', zh: '提示' },
+    whereLabel: { en: 'Where', zh: '位置' },
+    billsLabel: { en: 'OSHC', zh: 'OSHC' },
+    billsYes: { en: 'Direct bills OSHC for a standard consultation.', zh: '标准问诊可与 OSHC 直接结算。' },
+    billsNo: { en: 'Does not direct bill. You pay, then claim.', zh: '不直接结算，先付后报。' },
+    billsAsk: { en: 'Ask when you book.', zh: '预约时问。' },
+    verifiedOn: { en: 'Confirmed', zh: '确认日期' },
   },
   visit: {
     title: { en: 'Prep card', zh: '准备卡' },
@@ -90,8 +110,8 @@ export const ui = {
   after: {
     title: { en: 'What did you leave with?', zh: '你从诊所带走了什么？' },
     lead: {
-      en: 'Tap everything the doctor gave you. Your next steps appear below, with who does each one.',
-      zh: '点选医生给你的所有东西。下面会列出下一步，以及每一步归谁做。',
+      en: 'Tap everything the doctor gave you. The dates to watch and your next steps appear below, with who does each one.',
+      zh: '点选医生给你的所有东西。下面会列出要盯的日期和下一步，以及每一步归谁做。',
     },
     exampleHint: {
       en: 'Example: prescription and referral are selected. Tap the slips to match your visit.',
@@ -104,6 +124,19 @@ export const ui = {
     saveNotes: { en: 'Keep these in my notes', zh: '存到我的笔记' },
     saved: { en: 'Added to my notes', zh: '已加入我的笔记' },
     sourceLabel: { en: 'Source', zh: '来源' },
+  },
+  tracker: {
+    title: { en: 'Dates to watch', zh: '要盯的日期' },
+    lead: {
+      en: 'Worked out from your visit date. They stay on this phone and show on the home screen until you tick them off.',
+      zh: '按就诊日期算出来的。只存在这台手机上，会一直显示在首页，直到你勾掉。',
+    },
+    visitDate: { en: 'Visit date', zh: '就诊日期' },
+    today: { en: 'Today', zh: '今天' },
+    needDate: { en: 'Enter the visit date and the dates below will be worked out from it.', zh: '填上就诊日期，下面的日期就会算出来。' },
+    notSet: { en: 'Not entered yet', zh: '还没填' },
+    clear: { en: 'Clear', zh: '清除' },
+    done: { en: 'Done', zh: '完成' },
   },
   terms: {
     title: { en: 'Terms you will hear', zh: '你会听到的词' },
@@ -122,7 +155,6 @@ export const ui = {
       zh: '只保存在这台手机上。不会上传，别人看不到。',
     },
     example: { en: 'Example note. Edit any field to replace it.', zh: '示例笔记。改任意一项就会替换。' },
-    date: { en: 'Visit date', zh: '就诊日期' },
     clinic: { en: 'Clinic', zh: '诊所' },
     said: { en: 'What the doctor said', zh: '医生说了什么' },
     saidPh: { en: 'Write it while you remember. Diagnosis, medicine, how long.', zh: '趁还记得写下来：诊断、药、要多久。' },
@@ -131,7 +163,7 @@ export const ui = {
     steps: { en: 'Next steps from this visit', zh: '这次就诊的下一步' },
     noSteps: { en: 'No steps yet. Choose what you left with on the After screen.', zh: '还没有步骤。去"就诊后"选你带走了什么。' },
     copy: { en: 'Copy as text', zh: '复制为文字' },
-    clear: { en: 'Clear notes', zh: '清空笔记' },
+    clear: { en: 'Clear and start a new visit', zh: '清空，记录新的一次就诊' },
     cleared: { en: 'Cleared', zh: '已清空' },
   },
   owners: {
@@ -146,7 +178,10 @@ export const ui = {
       en: 'Waypoint explains steps and terms. It does not diagnose, replace your doctor’s advice, or guarantee costs or coverage. In an emergency call 000.',
       zh: 'Waypoint 只解释流程和术语，不做诊断、不替代医生的建议、不保证费用或保险范围。紧急情况请拨打 000。',
     },
-    sources: { en: 'Sources: Healthdirect, your OSHC provider, your clinic. Content dated', zh: '来源：Healthdirect、你的 OSHC 保险公司、你的诊所。内容日期' },
+    sources: {
+      en: 'Sources: Healthdirect, Services Australia, your OSHC provider, your clinic. Content dated',
+      zh: '来源：Healthdirect、Services Australia、你的 OSHC 保险公司、你的诊所。内容日期',
+    },
   },
 }
 
@@ -155,6 +190,8 @@ export const sources = {
   oshc: { en: 'Your OSHC provider', zh: '你的 OSHC 保险公司' },
   clinic: { en: 'Your clinic', zh: '你的诊所' },
   uni: { en: 'Your university', zh: '你的学校' },
+  pbs: { en: 'Services Australia (PBS)', zh: 'Services Australia（PBS）' },
+  medicare: { en: 'Services Australia (Medicare referral rules)', zh: 'Services Australia（Medicare 转诊规定）' },
 }
 
 export const services = [
@@ -206,6 +243,19 @@ export const services = [
   },
 ]
 
+// Clinics near campus. An entry is shown only once a team member has phoned the clinic
+// and written the date in `verified`. Nothing here is copied from a website or a chatbot.
+export const places = [
+  {
+    id: 'uqhc-st-lucia',
+    name: 'UQ Health Care, St Lucia',
+    campus: 'St Lucia',
+    where: { en: 'On the St Lucia campus. Check the building on the UQ Health Care website.', zh: '在 St Lucia 校区内，具体楼栋以 UQ Health Care 官网为准。' },
+    directBills: null,
+    verified: null,
+  },
+]
+
 export const costFacts = [
   {
     text: {
@@ -238,10 +288,26 @@ export const costFacts = [
 ]
 
 export const askClinic = [
-  { en: 'Do you direct bill OSHC from my insurer?', zh: '你们和我的 OSHC 保险公司直接结算吗？' },
-  { en: 'What is the fee for a standard consultation, and what will my gap be?', zh: '标准问诊多少钱？我自付的差额是多少？' },
-  { en: 'Do you take new patients who are international students?', zh: '你们接收国际学生新病人吗？' },
-  { en: 'Can I book online?', zh: '可以网上预约吗？' },
+  {
+    en: 'Do you direct bill OSHC from my insurer?',
+    zh: '你们和我的 OSHC 保险公司直接结算吗？',
+    why: { en: 'If not, you pay the full fee on the day and claim it back yourself.', zh: '不直接结算的话，当天要付全款，之后自己去报销。' },
+  },
+  {
+    en: 'What is the fee for a standard consultation, and what will my gap be?',
+    zh: '标准问诊多少钱？我自付的差额是多少？',
+    why: { en: 'The gap is yours even with direct billing, and it varies a lot between clinics.', zh: '就算直接结算，差额也是你自己付，而且各家诊所差别很大。' },
+  },
+  {
+    en: 'Do you take new patients who are international students?',
+    zh: '你们接收国际学生新病人吗？',
+    why: { en: 'Some clinics are not taking new patients. One question saves a wasted trip.', zh: '有些诊所不收新病人，问一句省得白跑。' },
+  },
+  {
+    en: 'Can I book online?',
+    zh: '可以网上预约吗？',
+    why: { en: 'Skips the phone call, and you can see the next free slot yourself.', zh: '不用打电话，还能自己看最近的空档。' },
+  },
 ]
 
 export const bookingChecklist = [
@@ -267,6 +333,7 @@ export const prep = {
   questions: [
     { id: 'howlong', en: 'How long should this take to get better?', zh: '多久能好？' },
     { id: 'tests', en: 'Do I need any tests?', zh: '需要做检查吗？' },
+    { id: 'refer', en: 'If I need a specialist, could you refer me to one who direct bills OSHC or has a small gap?', zh: '如果要转专科，能推荐一位和 OSHC 直接结算、或者自付差额小的吗？' },
     { id: 'write', en: 'Could you write down the diagnosis and the medicine name?', zh: '能把诊断和药名写下来吗？' },
     { id: 'return', en: 'Do I need to come back, and when?', zh: '要复诊吗？什么时候？' },
     { id: 'cert', en: 'Could I have a medical certificate for university?', zh: '能开一张给学校的病假证明吗？' },
@@ -421,6 +488,80 @@ export const artefacts = [
   },
 ]
 
+// Dates the app keeps for one visit. A `fixed` clock is worked out from a rule with a named source.
+// An `entered` clock depends on the insurer, the university or the doctor, so the user enters it;
+// `quick` offsets are shortcuts from the visit date, not rules. `scope` is 'visit' or an artefact id.
+export const clocks = [
+  {
+    id: 'visit.review',
+    scope: 'visit',
+    kind: 'entered',
+    label: { en: 'Go back if not better by', zh: '没好转就回去复诊' },
+    ask: { en: 'The doctor usually says how long it should take. Enter that date.', zh: '医生通常会说多久应该好转。把那个日期填进来。' },
+    quick: [{ days: 3 }, { days: 7 }, { days: 14 }],
+    source: 'clinic',
+  },
+  {
+    id: 'prescription.expiry',
+    scope: 'prescription',
+    kind: 'fixed',
+    months: 12,
+    label: { en: 'Prescription and repeats expire', zh: '处方和 repeat 失效' },
+    rule: {
+      en: 'A standard prescription is valid for 12 months from the date it was written, and any repeats must be filled within that time. Some medicines have shorter limits; the pharmacist will tell you.',
+      zh: '普通处方从开具当天起 12 个月内有效，repeat 也要在这段时间内取完。有些药期限更短，药剂师会说明。',
+    },
+    source: 'pbs',
+  },
+  {
+    id: 'referral.first',
+    scope: 'referral',
+    kind: 'entered',
+    label: { en: 'First specialist appointment', zh: '第一次专科就诊' },
+    ask: { en: 'You book this yourself, and waiting lists can run to months. Enter the date once you have it.', zh: '要你自己预约，排队可能要几个月。约到后把日期填进来。' },
+    source: 'clinic',
+    derives: {
+      id: 'referral.expiry',
+      months: 12,
+      label: { en: 'Referral covers visits until', zh: '转诊信有效到' },
+      rule: {
+        en: 'A GP referral is valid for 12 months counted from your first specialist appointment, not from the day it was written, unless the GP wrote a different period on it.',
+        zh: 'GP 转诊信的 12 个月从你第一次看专科那天算起，不是从开信那天算，除非 GP 在信上写了别的期限。',
+      },
+      source: 'medicare',
+    },
+  },
+  {
+    id: 'pathology.followup',
+    scope: 'pathology',
+    kind: 'entered',
+    label: { en: 'Follow-up to hear the results', zh: '回 GP 看结果' },
+    ask: { en: 'Results go to your GP, not to you. Ask how many days they take, book the follow-up and enter it.', zh: '结果发给 GP，不会直接给你。问清大概几天出，约好复诊后把日期填进来。' },
+    quick: [{ days: 3 }, { days: 7 }],
+    source: 'clinic',
+  },
+  {
+    id: 'receipt.claim',
+    scope: 'receipt',
+    kind: 'entered',
+    label: { en: 'OSHC claim deadline', zh: 'OSHC 报销截止' },
+    ask: {
+      en: 'Your policy sets a time limit for claims, counted from the date of the visit. Find it in the OSHC app or policy document and enter it. Claiming this week is easier than remembering later.',
+      zh: '保单规定了报销时限，从就诊日起算。在 OSHC app 或保单里找到后填进来。这周就报，比以后再想起来省事。',
+    },
+    quick: [{ months: 12 }, { months: 24 }],
+    source: 'oshc',
+  },
+  {
+    id: 'certificate.uni',
+    scope: 'certificate',
+    kind: 'entered',
+    label: { en: 'University deadline for the certificate', zh: '向学校提交证明的截止' },
+    ask: { en: 'Extension and deferral deadlines are short, sometimes a few days. Check your course rule today and enter the date.', zh: '延期和缓考的截止时间很短，有时只有几天。今天就查课程规定，把日期填进来。' },
+    source: 'uni',
+  },
+]
+
 export const glossary = [
   { en: 'GP', zh: '全科医生', defEn: 'General practitioner. Your first-contact doctor for most problems; can prescribe, refer you and order tests.', defZh: 'General practitioner，大多数问题的第一位医生，可以开药、转诊、开化验。' },
   { en: 'OSHC', zh: '海外学生健康保险', defEn: 'Overseas Student Health Cover. The insurance international students must hold for their visa. It pays part of doctor, hospital and medicine costs; limits and exclusions apply.', defZh: 'Overseas Student Health Cover，国际学生签证要求的健康保险。报销部分医生、医院和药费，有上限和除外项目。' },
@@ -452,7 +593,6 @@ export const glossary = [
 
 export const exampleNote = {
   example: true,
-  date: '2026-09-02',
   clinic: 'Example clinic, St Lucia',
   said: 'Viral infection. Rest, fluids, paracetamol if needed. Should settle within a week.',
   comeBack: 'Fever lasts more than 3 days, or breathing gets harder.',
