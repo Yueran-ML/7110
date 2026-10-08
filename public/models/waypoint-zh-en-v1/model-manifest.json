@@ -1,0 +1,51 @@
+{
+  "model_id": "waypoint-zh-en-v1",
+  "base_model": {
+    "repo": "Helsinki-NLP/opus-mt-zh-en",
+    "revision": "cf109095479db38d6df799875e34039d4938aaa6",
+    "files": [
+      "README.md",
+      "config.json",
+      "generation_config.json",
+      "pytorch_model.bin",
+      "source.spm",
+      "target.spm",
+      "tokenizer_config.json",
+      "vocab.json"
+    ],
+    "license": "cc-by-4.0"
+  },
+  "modification": "32 full-model fine-tuning steps on 64 AI-authored synthetic pairs; dynamic int8 ONNX conversion",
+  "training_data_reviewed": false,
+  "license": "CC-BY-4.0",
+  "files": {
+    "config.json": {
+      "bytes": 1311,
+      "sha256": "0231a8b83bbc7f5b7d5b426579fa98da6155c20467272c78384444991af489bb"
+    },
+    "generation_config.json": {
+      "bytes": 288,
+      "sha256": "dfef99cdb042aa70d1e98209f03197c96c7b82a14748a0e330c338704180ad75"
+    },
+    "onnx/decoder_model_merged_quantized.onnx": {
+      "bytes": 93679534,
+      "sha256": "49173f15287d75299642782ec27b38aa28c54912f1c581e44f1ba38746cb41b6"
+    },
+    "onnx/encoder_model_quantized.onnx": {
+      "bytes": 52859864,
+      "sha256": "abf247403dcf892c9a066c1e64ab48b083959b0765f6bd0212ad6dfa25a8252b"
+    },
+    "special_tokens_map.json": {
+      "bytes": 74,
+      "sha256": "5e4d1f5e759d74cb1c2fe1d165cfc62b5237aa904de759380cd6f43042eec723"
+    },
+    "tokenizer.json": {
+      "bytes": 2263496,
+      "sha256": "eb034bbe8058a8a2ff4723fda4881aa9bdf79eef64201c996e4ba27424b44127"
+    },
+    "tokenizer_config.json": {
+      "bytes": 849,
+      "sha256": "a8149732ed12666d6d6cdcbeb80fec4766a35f3f624165fe872b2e79be9f7891"
+    }
+  }
+}

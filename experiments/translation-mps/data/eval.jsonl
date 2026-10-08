@@ -1,0 +1,12 @@
+{"zh":"我的嘴里有金属味。","en":"I have a metallic taste in my mouth.","focus":"Unseen symptom: metallic taste"}
+{"zh":"早上醒来时，我的手腕很僵硬。","en":"My wrists feel very stiff when I wake up in the morning.","focus":"Unseen symptom and body part: wrist stiffness"}
+{"zh":"我没有胸痛，也没有呼吸困难。","en":"I do not have chest pain or difficulty breathing.","focus":"Preserve both negations; do not add symptoms"}
+{"zh":"我没有怀孕。","en":"I am not pregnant.","focus":"Preserve negation"}
+{"zh":"我上楼时觉得气短。","en":"I feel short of breath when I walk upstairs.","focus":"Unseen symptom: breathlessness on stairs"}
+{"zh":"我的右手手指有点麻。","en":"The fingers on my right hand feel a little numb.","focus":"Preserve right side, fingers, and mild numbness"}
+{"zh":"我昨天晚上测到体温是三十八点二度。","en":"My temperature was 38.2 degrees Celsius last night.","focus":"Preserve number and time"}
+{"zh":"我只吃了半片药，不是一整片。","en":"I only took half a tablet, not a whole tablet.","focus":"Preserve half versus whole tablet"}
+{"zh":"我两周前开始服用一种新药。","en":"I started taking a new medicine two weeks ago.","focus":"Preserve new medicine and two weeks"}
+{"zh":"我躺下后胃酸会反上来。","en":"I get acid reflux when I lie down.","focus":"Unseen symptom: reflux when lying down"}
+{"zh":"我尿尿的时候有灼烧感。","en":"I have a burning sensation when I urinate.","focus":"Colloquial input and unseen symptom"}
+{"zh":"我没有摔倒，但肩膀一直不舒服。","en":"I have not fallen, but my shoulder has been uncomfortable.","focus":"Preserve negation and ongoing shoulder discomfort"}

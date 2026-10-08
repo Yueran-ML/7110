@@ -5,7 +5,7 @@ A mobile-first prototype that answers one question for international students us
 It covers one healthcare pathway, the routine GP visit for a non-emergency illness, in three stages, then keeps the dates that follow.
 
 - **Before**: the questions to ask when you book and why each answer matters, which service is for what, how the money moves with OSHC, what to bring.
-- **Visit**: a prep card that turns your symptoms into a sentence you can show the doctor, with a Chinese mirror for you.
+- **Visit**: write symptoms and what you have tried in Chinese or English. Chinese notes can be translated locally into editable English before you show or copy the prep card. The original notes remain visible underneath.
 - **After**: tap what you left the clinic with (prescription, referral, pathology form, receipt, certificate) and get the next steps, each labelled with who does it: you, the clinic, the pharmacy, the insurer or the university.
 - **Dates to watch**: enter the visit date. The app works out when the prescription expires and when a referral's 12 months run out, and asks for the dates only you can know: the specialist appointment, the follow-up, the OSHC claim deadline, the university deadline. They stay on the phone and show on the home screen until ticked off.
 
@@ -44,10 +44,53 @@ Built from the COMP7110 team Gita discovery record: de-identified interview reco
 ```bash
 npm install
 npm run dev      # local dev server
-npm run build    # single-file build in dist/index.html
+npm test         # source/translation invalidation checks
+npm run build    # complete static website in dist/, including the model
 ```
 
 Deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.
+
+## Local translation and uploading
+
+The prototype includes a modified `Helsinki-NLP/opus-mt-zh-en` model, fine-tuned
+locally for 32 steps on 64 AI-authored synthetic bilingual examples. It is an
+experimental translation aid, and some symptoms and quantities still translate
+incorrectly. The editable English fields let the user correct wording before
+copying. Editing a Chinese source invalidates its old translation; a late
+background response cannot replace a newer input.
+
+Translation runs in a Web Worker with Transformers.js 3.8.1 and the WASM backend.
+The first use downloads approximately 150 MB of model files plus the runtime.
+Model files may be cached by the browser; cache retention depends on the browser
+and available space. User text is not sent to a translation API. The model and
+runtime are served from this website, with no remote Hugging Face model fallback.
+Other app functions do not require loading the translation model.
+
+The deployable model is committed as regular files in
+`public/models/waypoint-zh-en-v1/`. Its two ONNX files are approximately 50 MiB and
+89 MiB, each below GitHub's 100 MiB per-file limit. Include **all** files in this
+folder when submitting changes in GitHub Desktop. Large-file warnings above
+50 MiB are expected. Use GitHub Desktop rather than the GitHub website's file
+upload control, which has a lower per-file limit.
+
+The runtime in `public/runtime/onnx/` is generated from the locked npm dependencies
+by `predev`/`prebuild`; it is intentionally ignored by Git. The existing Actions
+workflow runs `npm ci` and `npm run build`, which generates and publishes it along
+with the frontend and model. The app is now a multi-file static build; distribute
+the whole `dist` directory when serving it directly, rather than just its HTML.
+Paths are relative so the deployed `/7110/` project URL works.
+
+In GitHub Desktop, review the changes, commit them to `main`, then click
+**Push origin**. Wait for the **Deploy to GitHub Pages** workflow to succeed.
+The Python experiment directory has its own ignore rules for virtual
+environments, logs and the original full-precision checkpoints; those large files
+do not need to be uploaded. Neither an inference server nor Python is needed by
+the deployed website.
+
+Model attribution and modifications are documented in the model folder. The
+local training experiment and reproducible export script are in
+`experiments/translation-mps/`. Starting a new visit also clears prep-card inputs,
+English translations and the packed checklist.
 
 ## Status
 

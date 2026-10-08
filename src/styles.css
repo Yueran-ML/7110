@@ -513,6 +513,13 @@ main { flex: 1; padding: 0 20px 24px; }
 
 /* ---------- dates to watch ---------- */
 
+.translation-draft { padding-left: 12px; border-left: 3px solid var(--accent); }
+.translation-panel { display: grid; gap: 10px; padding: 12px; border-radius: var(--radius-s); background: var(--surface-2); }
+.translation-panel .actions { margin: 0; flex-wrap: wrap; }
+.translation-status { margin: 0; color: var(--ink-2); font-size: 14px; overflow-wrap: anywhere; }
+.translation-status.is-error { color: var(--danger); }
+button:disabled { opacity: 0.55; cursor: default; }
+
 .datebar { display: grid; gap: 6px; }
 .datebar-row { display: flex; gap: 8px; align-items: center; }
 .datebar-row input, .clock-input {

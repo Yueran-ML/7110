@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import useLocalTranslation from './useLocalTranslation.js'
+import { applyTranslations, containsChinese, englishCard, translationFields, untranslatedFields } from './translation.js'
 import {
   CONTENT_DATE,
   artefacts,
@@ -373,9 +375,8 @@ function Home({ t, lang, go, rows }) {
   )
 }
 
-function Before({ t, lang, go }) {
+function Before({ t, lang, go, packed, setPacked }) {
   const [section, setSection] = useState('ask')
-  const [packed, setPacked] = useStored('wp.packed', {})
   const [copied, flash] = useFlash()
   const [copiedIdx, setCopiedIdx] = useState(-1)
 
@@ -492,26 +493,25 @@ function Before({ t, lang, go }) {
   )
 }
 
-function Visit({ t, go }) {
-  const [form, setForm] = useStored('wp.prep', { ...prep.example, isExample: true })
+function Visit({ t, go, form, setForm }) {
   const [copied, flash] = useFlash()
+  const { translate, cancel, status, busy } = useLocalTranslation()
 
   const set = (patch) => setForm({ ...form, ...patch, isExample: false })
   const sinceOpt = prep.since.find((o) => o.id === form.since) ?? prep.since[1]
   const trendOpt = prep.trend.find((o) => o.id === form.trend) ?? prep.trend[1]
   const qs = prep.questions.filter((q) => form.questions.includes(q.id))
 
-  const en = [
-    `I've had ${form.symptom || '…'} ${sinceOpt.en}.`,
-    `On a scale of 0 to 10 it's about ${form.severity}, and it's ${trendOpt.en}.`,
-    form.tried ? `I've tried ${form.tried}.` : '',
-    qs.length ? `I have some questions. ${qs.map((q) => q.en).join(' ')}` : '',
-  ].filter(Boolean).join(' ')
+  const missing = untranslatedFields(form)
+  const hasChinese = translationFields.some((field) => containsChinese(form[field]))
+  const en = englishCard(form, sinceOpt, trendOpt, qs)
 
+  const zhLine = (label, value) => `${label}：${value}${/[。！？.!?]$/.test(value) ? '' : '。'}`
   const zh = [
-    `我${sinceOpt.zhSentence}${form.symptom || '…'}。`,
+    zhLine('症状', form.symptom || '…'),
+    zhLine('持续时间', sinceOpt.zh),
     `严重程度 0 到 10 分大约 ${form.severity} 分，目前${trendOpt.zh}。`,
-    form.tried ? `我试过：${form.tried}。` : '',
+    form.tried ? zhLine('已尝试', form.tried) : '',
     qs.length ? `我想问：${qs.map((q) => q.zh).join(' ')}` : '',
   ].filter(Boolean).join('')
 
@@ -519,6 +519,32 @@ function Visit({ t, go }) {
     const has = form.questions.includes(id)
     set({ questions: has ? form.questions.filter((x) => x !== id) : [...form.questions, id] })
   }
+
+  const translateInputs = async () => {
+    const originals = Object.fromEntries(missing.map((field) => [field, form[field]]))
+    try {
+      const translated = await translate(originals)
+      setForm((current) => applyTranslations(current, originals, translated))
+    } catch {
+      // The hook presents errors; cancellation and navigation keep existing drafts.
+    }
+  }
+
+  const englishDraft = (field) => containsChinese(form[field]) && (
+    <label className="field translation-draft">
+      <span className="label">{t(ui.visit[field === 'symptom' ? 'englishSymptom' : 'englishTried'])}</span>
+      <textarea
+        rows="2" lang="en" placeholder={t(ui.visit.englishPlaceholder)}
+        value={form.translations?.[field]?.source === form[field] ? form.translations[field].text : ''}
+        onChange={(event) => {
+          const text = event.target.value
+          setForm((current) => ({ ...current, translations: { ...current.translations,
+            [field]: { source: current[field], text },
+          } }))
+        }}
+      />
+    </label>
+  )
 
   return (
     <section className="screen">
@@ -532,6 +558,7 @@ function Visit({ t, go }) {
           <span className="label">{t(ui.visit.symptom)}</span>
           <input value={form.symptom} placeholder={t(ui.visit.symptomPh)} onChange={(e) => set({ symptom: e.target.value })} />
         </label>
+        {englishDraft('symptom')}
 
         <div className="field">
           <span className="label">{t(ui.visit.since)}</span>
@@ -566,6 +593,25 @@ function Visit({ t, go }) {
           <span className="label">{t(ui.visit.tried)}</span>
           <input value={form.tried} placeholder={t(ui.visit.triedPh)} onChange={(e) => set({ tried: e.target.value })} />
         </label>
+        {englishDraft('tried')}
+
+        {hasChinese && (
+          <div className="translation-panel">
+            <p className="muted">{t(ui.visit.translationLead)}</p>
+            <div className="actions">
+              <button type="button" className="btn" disabled={busy || missing.length === 0} onClick={translateInputs}>
+                {t(busy ? ui.visit.translating : missing.length === 0 ? ui.visit.translationReady : ui.visit.translate)}
+              </button>
+              {busy && <button type="button" className="btn ghost" onClick={cancel}>{t(ui.visit.cancelTranslation)}</button>}
+            </div>
+            <p className={`translation-status ${status.error ? 'is-error' : ''}`} role="status" aria-live="polite">
+              {status.error ? t(ui.visit[status.error === 'tooLong' ? 'translationTooLong' : 'translationFailed'])
+                : status.phase === 'loading' ? `${t(ui.visit.loadingModel)}${status.loaded ? ` · ${(status.loaded / 1024 / 1024).toFixed(1)} MB` : ''}`
+                  : status.phase === 'translating' ? t(ui.visit.translating)
+                    : missing.length === 0 ? t(ui.visit.reviewTranslation) : t(ui.visit.translationPending)}
+            </p>
+          </div>
+        )}
 
         <div className="field">
           <span className="label">{t(ui.visit.questions)}</span>
@@ -588,9 +634,10 @@ function Visit({ t, go }) {
         <p className="prep-en" lang="en">{en}</p>
         <span className="label">{t(ui.visit.forYou)}</span>
         <p className="prep-zh" lang="zh-CN">{zh}</p>
-        <button type="button" className="btn" onClick={() => copyText(`${en}\n\n${zh}`).then(flash)}>
+        <button type="button" className="btn" disabled={missing.length > 0} onClick={() => copyText(`${en}\n\n${zh}`).then(flash)}>
           <Icon name="copy" /> {copied ? t(ui.visit.copied) : t(ui.visit.copy)}
         </button>
+        {missing.length > 0 && <p className="muted">{t(ui.visit.copyNeedsTranslation)}</p>}
       </div>
       <p className="tip">{t(ui.visit.tip)}</p>
       <TermsLink t={t} go={go} />
@@ -833,6 +880,8 @@ export default function App() {
   const [visitDate, setVisitDate] = useStored('wp.visitDate', '')
   const [dates, setDates] = useStored('wp.dates', {})
   const [clockDone, setClockDone] = useStored('wp.clockDone', {})
+  const [prepForm, setPrepForm] = useStored('wp.prep', { ...prep.example, isExample: true })
+  const [packed, setPacked] = useStored('wp.packed', {})
 
   const t = (o) => (o == null ? '' : typeof o === 'string' ? o : (o[lang] ?? o.en ?? ''))
 
@@ -855,14 +904,16 @@ export default function App() {
     setVisitDate('')
     setDates({})
     setClockDone({})
+    setPrepForm({ symptom: '', since: 'today', severity: 0, trend: 'same', tried: '', questions: [], isExample: false, translations: {} })
+    setPacked({})
   }
 
   const tracker = { rows, visitDate, setVisitDate, dates, setDates, clockDone, setClockDone }
 
   let screen
   if (tab === 'home') screen = <Home t={t} lang={lang} go={go} rows={rows} />
-  else if (tab === 'before') screen = <Before t={t} lang={lang} go={go} />
-  else if (tab === 'visit') screen = <Visit t={t} go={go} />
+  else if (tab === 'before') screen = <Before t={t} lang={lang} go={go} packed={packed} setPacked={setPacked} />
+  else if (tab === 'visit') screen = <Visit t={t} go={go} form={prepForm} setForm={setPrepForm} />
   else if (tab === 'after') screen = <After t={t} lang={lang} go={go} picked={picked} setPicked={setPicked} done={done} setDone={setDone} tracker={tracker} />
   else if (tab === 'terms') screen = <Terms t={t} lang={lang} />
   else screen = <Notes t={t} lang={lang} go={go} picked={picked} done={done} setDone={setDone} note={note} setNote={setNote} rows={rows} visitDate={visitDate} setVisitDate={setVisitDate} reset={reset} />

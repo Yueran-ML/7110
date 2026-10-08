@@ -1,0 +1,4 @@
+optimum-onnx[onnxruntime]==0.1.0
+onnx==1.23.2
+onnxruntime==1.30.0
+accelerate==1.15.0
