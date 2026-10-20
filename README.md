@@ -50,6 +50,10 @@ npm run build    # complete static website in dist/, including the model
 
 Deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.
 
+## Where the source lives
+
+This repository builds the prototype and deploys it to GitHub Pages. The same source, including the model files, is also kept in the COMP7110 team repository under `apps/waypoint/`, where it is not deployed. That copy leaves out this README and the Pages workflow.
+
 ## Local translation and uploading
 
 The prototype includes a modified `Helsinki-NLP/opus-mt-zh-en` model, fine-tuned
