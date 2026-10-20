@@ -507,13 +507,18 @@ function Visit({ t, go, form, setForm }) {
   const en = englishCard(form, sinceOpt, trendOpt, qs)
 
   const zhLine = (label, value) => `${label}：${value}${/[。！？.!?]$/.test(value) ? '' : '。'}`
-  const zh = [
+  const zhLines = [
     zhLine('症状', form.symptom || '…'),
     zhLine('持续时间', sinceOpt.zh),
     `严重程度 0 到 10 分大约 ${form.severity} 分，目前${trendOpt.zh}。`,
     form.tried ? zhLine('已尝试', form.tried) : '',
     qs.length ? `我想问：${qs.map((q) => q.zh).join(' ')}` : '',
-  ].filter(Boolean).join('')
+  ].filter(Boolean)
+  const zh = zhLines.join('')
+  const enLines = en.split(/ (?=(?:Duration|Severity|Tried|Questions): )/).map((line) => {
+    const match = line.match(/^([A-Za-z]+): ([^]*)$/)
+    return match ? { label: match[1], text: match[2] } : { label: '', text: line }
+  })
 
   const toggleQ = (id) => {
     const has = form.questions.includes(id)
@@ -631,9 +636,13 @@ function Visit({ t, go, form, setForm }) {
 
       <div className="card prep-card">
         <span className="label">{t(ui.visit.showDoctor)}</span>
-        <p className="prep-en" lang="en">{en}</p>
+        <div className="prep-en" lang="en">
+          {enLines.map((line, i) => <p key={i}>{line.label && <b>{line.label}</b>}{line.text}</p>)}
+        </div>
         <span className="label">{t(ui.visit.forYou)}</span>
-        <p className="prep-zh" lang="zh-CN">{zh}</p>
+        <div className="prep-zh" lang="zh-CN">
+          {zhLines.map((line, i) => <p key={i}>{line}</p>)}
+        </div>
         <button type="button" className="btn" disabled={missing.length > 0} onClick={() => copyText(`${en}\n\n${zh}`).then(flash)}>
           <Icon name="copy" /> {copied ? t(ui.visit.copied) : t(ui.visit.copy)}
         </button>
