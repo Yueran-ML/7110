@@ -1213,6 +1213,7 @@ export default function App() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
+    document.querySelector('.app')?.scrollTo(0, 0)
   }, [tab])
 
   const stages = ['before', 'visit', 'after']
