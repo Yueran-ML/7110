@@ -10,12 +10,21 @@ import {
   costFacts,
   exampleNote,
   glossary,
+  pathologyQuickActions,
   places,
   prep,
   services,
   sources,
   ui,
 } from './content.js'
+
+import {
+  todayIso,
+  isIso,
+  shift,
+  daysUntil,
+  isTaskDateValid,
+} from './dateUtils.js'
 
 // ---------- persistence: everything stays on this phone ----------
 
@@ -72,41 +81,7 @@ function useFlash(ms = 1600) {
 
 // ---------- dates: local calendar days, no time zones ----------
 
-const ISO = /^\d{4}-\d{2}-\d{2}$/
-const pad = (n) => String(n).padStart(2, '0')
-const toIso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-const todayIso = () => toIso(new Date())
-const isIso = (s) => typeof s === 'string' && ISO.test(s)
 
-function parseIso(s) {
-  const [y, m, d] = s.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
-
-function addDays(iso, n) {
-  const d = parseIso(iso)
-  d.setDate(d.getDate() + n)
-  return toIso(d)
-}
-
-function addMonths(iso, n) {
-  const d = parseIso(iso)
-  const day = d.getDate()
-  d.setDate(1)
-  d.setMonth(d.getMonth() + n)
-  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
-  d.setDate(Math.min(day, last))
-  return toIso(d)
-}
-
-function shift(iso, q) {
-  return q.months ? addMonths(iso, q.months) : addDays(iso, q.days)
-}
-
-function daysUntil(iso) {
-  const utc = (x) => Date.UTC(x.getFullYear(), x.getMonth(), x.getDate())
-  return Math.round((utc(parseIso(iso)) - utc(parseIso(todayIso()))) / 86400000)
-}
 
 function remaining(diff, lang) {
   const zh = lang === 'zh'
@@ -124,7 +99,7 @@ function quickLabel(q, lang) {
 }
 
 function buildClocks({ picked, visitDate, dates, done }) {
-  if (!isIso(visitDate)) return []
+  if (!isIso(visitDate) || visitDate > todayIso()) return []
   const rows = []
   for (const c of clocks) {
     if (c.scope !== 'visit' && !picked.includes(c.scope)) continue
@@ -132,7 +107,9 @@ function buildClocks({ picked, visitDate, dates, done }) {
       rows.push({ ...c, due: shift(visitDate, c), done: !!done[c.id] })
       continue
     }
-    const entered = isIso(dates[c.id]) ? dates[c.id] : null
+    const entered = isTaskDateValid(visitDate, dates[c.id])
+      ? dates[c.id]
+      : null
     rows.push({ ...c, due: entered, done: !!done[c.id] })
     if (entered && c.derives) {
       const d = c.derives
@@ -149,6 +126,27 @@ function buildClocks({ picked, visitDate, dates, done }) {
   return withDiff
 }
 
+const hasText = (value) => typeof value === 'string' && value.trim() !== ''
+
+function visitSummary({ note, visitDate, picked, picksAreExample, done, rows }) {
+  const written = note && !note.example ? note : {}
+  const ownPicks = picksAreExample ? [] : picked
+  const chosen = artefacts.filter((a) => ownPicks.includes(a.id))
+  const stepIds = chosen.flatMap((a) => a.steps.map((_, i) => `${a.id}-${i}`))
+  return {
+    visitDate: isIso(visitDate) ? visitDate : '',
+    clinic: written.clinic ?? '',
+    said: written.said ?? '',
+    comeBack: written.comeBack ?? '',
+    picked: chosen.map((a) => a.id),
+    stepsDone: stepIds.filter((id) => done[id]).length,
+    stepsTotal: stepIds.length,
+    upcoming: rows
+      .filter((r) => (r.scope === 'visit' || ownPicks.includes(r.scope)) && r.due && !r.done)
+      .map((r) => ({ label: r.label, due: r.due })),
+  }
+}
+
 // ---------- small pieces ----------
 
 const Icon = ({ name }) => {
@@ -161,6 +159,9 @@ const Icon = ({ name }) => {
     notes: 'M6 3.5h12v17l-3-2-3 2-3-2-3 2v-17ZM9 8h6M9 11.5h6',
     check: 'M5 12.5l4.5 4.5L19 7.5',
     copy: 'M9 9.5h10v11H9v-11Zm-4-6h10v3M5 3.5v11h3',
+    guide: 'M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6M4 18a2 2 0 1 0 4 0 2 2 0 1 0-4 0M16 6a2 2 0 1 0 4 0 2 2 0 1 0-4 0',
+    calendar: 'M5 6.5h14v13H5v-13Zm0 4h14M9 4v4.5M15 4v4.5',
+    lock: 'M7.5 10.5V8a4.5 4.5 0 0 1 9 0v2.5M5.5 10.5h13v10h-13v-10Zm6.5 4v2.5',
   }
   return (
     <svg className="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -174,10 +175,49 @@ function OwnerChip({ owner, t }) {
 }
 
 function SourceLine({ source, t }) {
+  const details = sources[source]
   return (
     <span className="source">
-      {t(ui.after.sourceLabel)}: {t(sources[source])}
+      <span>{t(ui.after.sourceLabel)}: {t(details)}</span>
+      {details.url && (
+        <>
+          <a className="source-link" href={details.url} target="_blank" rel="noopener noreferrer">
+            {t(details.linkLabel)} <span aria-hidden="true">↗</span>
+          </a>
+          <span className="source-reviewed">{t(ui.after.reviewedLabel)}: {details.reviewed}</span>
+        </>
+      )}
     </span>
+  )
+}
+
+function PathologyQuickActions({ t }) {
+  const [copied, flash] = useFlash()
+  const questions = pathologyQuickActions.questions.map((question) => question.en).join('\n')
+
+  return (
+    <div className="card pathology-actions">
+      <h4 className="pathology-actions-title">{t(pathologyQuickActions.title)}</h4>
+      <p className="muted">{t(pathologyQuickActions.lead)}</p>
+      <ul className="pathology-questions">
+        {pathologyQuickActions.questions.map((question) => (
+          <li key={question.en}>{t(question)}</li>
+        ))}
+      </ul>
+      <div className="actions">
+        <a
+          className="btn"
+          href={pathologyQuickActions.finderUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t(pathologyQuickActions.finderLabel)} <span aria-hidden="true">↗</span>
+        </a>
+        <button type="button" className="btn ghost" onClick={() => copyText(questions).then(flash)}>
+          <Icon name="copy" /> {copied ? t(pathologyQuickActions.copiedLabel) : t(pathologyQuickActions.copyLabel)}
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -229,57 +269,221 @@ function TermsLink({ t, go }) {
   )
 }
 
+function StageNav({ current, t, go }) {
+  const order = ['before', 'visit', 'after']
+  const index = order.indexOf(current)
+  const prev = order[index - 1]
+  const next = order[index + 1] ?? 'notes'
+  const title = (id) => t(id === 'notes' ? ui.tabs.notes : ui.stages[id].title)
+  return (
+    <nav className="stage-nav" aria-label={t(ui.stageNav.label)}>
+      {prev ? (
+        <button type="button" className="stage-step prev" onClick={() => go(prev)}>
+          <span className="stage-step-dir">← {t(ui.stageNav.prev)}</span>
+          <span className="stage-step-title">{title(prev)}</span>
+        </button>
+      ) : <span aria-hidden="true" />}
+      <button type="button" className="stage-step next" onClick={() => go(next)}>
+        <span className="stage-step-dir">{t(ui.stageNav.next)} →</span>
+        <span className="stage-step-title">{title(next)}</span>
+      </button>
+    </nav>
+  )
+}
+
+function DateInput({ id, value, onChange, min, max, label, placeholder, invalid, describedBy }) {
+  const openPicker = (event) => {
+    try {
+      event.currentTarget.showPicker?.()
+    } catch {
+      // Where showPicker is blocked, the native control still opens on tap.
+    }
+  }
+  return (
+    <span className={`date-input ${value ? 'has-value' : ''} ${invalid ? 'is-invalid' : ''}`}>
+      <span className="date-input-text" aria-hidden="true">{value || placeholder}</span>
+      <Icon name="calendar" />
+      <input
+        id={id}
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        aria-label={label}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        onChange={(event) => onChange(event.target.value)}
+        onClick={openPicker}
+      />
+    </span>
+  )
+}
+
+function ConfirmButton({ className, label, confirmLabel, onConfirm }) {
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!armed) return undefined
+    const id = window.setTimeout(() => setArmed(false), 4000)
+    return () => window.clearTimeout(id)
+  }, [armed])
+  return (
+    <button
+      type="button"
+      className={`${className} ${armed ? 'is-armed' : ''}`}
+      onClick={() => {
+        if (!armed) {
+          setArmed(true)
+          return
+        }
+        setArmed(false)
+        onConfirm()
+      }}
+    >
+      {armed ? confirmLabel : label}
+    </button>
+  )
+}
+
 function Badge({ diff, lang, muted }) {
   const cls = muted ? '' : diff < 0 ? 'is-over' : diff <= 7 ? 'is-soon' : diff <= 30 ? 'is-near' : ''
   return <span className={`badge num ${cls}`}>{remaining(diff, lang)}</span>
 }
 
+
 function VisitDateBar({ t, visitDate, setVisitDate }) {
+  const invalid = visitDate !== '' && !isIso(visitDate)
+  const future = isIso(visitDate) && visitDate > todayIso()
+  const error = invalid || future
+
   return (
     <div className="datebar">
-      <label className="label" htmlFor="visit-date">{t(ui.tracker.visitDate)}</label>
+      <label className="label" htmlFor="visit-date">
+        {t(ui.tracker.visitDate)}
+      </label>
+
       <div className="datebar-row">
-        <input id="visit-date" type="date" value={visitDate} max={todayIso()} onChange={(e) => setVisitDate(e.target.value)} />
-        <button type="button" className="chip" onClick={() => setVisitDate(todayIso())}>{t(ui.tracker.today)}</button>
+        <DateInput
+          id="visit-date"
+          value={visitDate}
+          max={todayIso()}
+          placeholder={t(ui.tracker.pickDate)}
+          invalid={error}
+          describedBy={error ? 'visit-date-error' : undefined}
+          onChange={setVisitDate}
+        />
+
+        <button
+          type="button"
+          className="chip"
+          onClick={() => setVisitDate(todayIso())}
+        >
+          {t(ui.tracker.today)}
+        </button>
       </div>
+
+      {error && (
+        <p id="visit-date-error" className="date-error" role="alert">
+          {t(invalid
+            ? ui.tracker.invalidDate
+            : ui.tracker.futureVisitDate)}
+        </p>
+      )}
     </div>
   )
 }
 
+
+
 function ClockRow({ row, t, lang, visitDate, dates, setDates, done, setDone }) {
-  const setDate = (v) => setDates({ ...dates, [row.id]: v })
+  const setDate = (value) => {
+    setDates((current) => ({
+      ...current,
+      [row.id]: value,
+    }))
+  }
+
+  const enteredDate = dates[row.id] ?? ''
+
+  const hasDateError =
+    row.kind === 'entered' &&
+    enteredDate !== '' &&
+    !isTaskDateValid(visitDate, enteredDate)
+
   return (
     <li className={`clock ${row.done ? 'is-done' : ''}`}>
       <label className="check">
-        <input type="checkbox" checked={row.done} onChange={(e) => setDone({ ...done, [row.id]: e.target.checked })} />
-        <span className="check-box" aria-hidden="true"><Icon name="check" /></span>
+        <input
+          type="checkbox"
+          checked={row.done}
+          onChange={(e) =>
+            setDone({ ...done, [row.id]: e.target.checked })
+          }
+        />
+        <span className="check-box" aria-hidden="true">
+          <Icon name="check" />
+        </span>
         <span className="clock-body">
           <span className="clock-head">
             <span className="clock-label">{t(row.label)}</span>
-            {row.due ? <Badge diff={row.diff} lang={lang} muted={row.done} /> : <span className="badge is-empty">{t(ui.tracker.notSet)}</span>}
+            {row.due ? (
+              <Badge diff={row.diff} lang={lang} muted={row.done} />
+            ) : (
+              <span className="badge is-empty">
+                {t(ui.tracker.notSet)}
+              </span>
+            )}
           </span>
-          {row.due && <span className="clock-date num">{row.due}</span>}
-          <span className="clock-rule">{t(row.rule ?? row.ask)}</span>
+          {row.due && (
+            <span className="clock-date num">{row.due}</span>
+          )}
+          <span className="clock-rule">
+            {t(row.rule ?? row.ask)}
+          </span>
           <SourceLine source={row.source} t={t} />
         </span>
       </label>
+
       {row.kind === 'entered' && !row.done && (
         <div className="clock-entry">
-          <input
-            type="date"
-            className="clock-input"
-            value={dates[row.id] ?? ''}
+          <DateInput
+            value={enteredDate}
             min={visitDate}
-            onChange={(e) => setDate(e.target.value)}
-            aria-label={t(row.label)}
+            label={t(row.label)}
+            placeholder={t(ui.tracker.pickDate)}
+            invalid={hasDateError}
+            describedBy={hasDateError ? `date-error-${row.id}` : undefined}
+            onChange={setDate}
           />
+
+          {hasDateError && (
+            <p
+              id={`date-error-${row.id}`}
+              className="date-error"
+              role="alert"
+            >
+              {t(ui.tracker.invalidTaskDate)}
+            </p>
+          )}
+
           {(row.quick ?? []).map((q) => (
-            <button key={quickLabel(q, 'en')} type="button" className="chip small" onClick={() => setDate(shift(visitDate, q))}>
+            <button
+              key={quickLabel(q, 'en')}
+              type="button"
+              className="chip small"
+              onClick={() => setDate(shift(visitDate, q))}
+            >
               {quickLabel(q, lang)}
             </button>
           ))}
+
           {row.due && (
-            <button type="button" className="chip small" onClick={() => setDate('')}>{t(ui.tracker.clear)}</button>
+            <button
+              type="button"
+              className="chip small"
+              onClick={() => setDate('')}
+            >
+              {t(ui.tracker.clear)}
+            </button>
           )}
         </div>
       )}
@@ -288,7 +492,7 @@ function ClockRow({ row, t, lang, visitDate, dates, setDates, done, setDone }) {
 }
 
 function Tracker({ t, lang, rows, visitDate, setVisitDate, dates, setDates, clockDone, setClockDone }) {
-  const has = isIso(visitDate)
+  const has = isIso(visitDate) && visitDate <= todayIso()
   const nDone = rows.filter((r) => r.done).length
   return (
     <>
@@ -322,7 +526,8 @@ function Tracker({ t, lang, rows, visitDate, setVisitDate, dates, setDates, cloc
 
 // ---------- screens ----------
 
-function Home({ t, lang, go, rows }) {
+function Home({ t, lang, go, rows, notes, noteCount, onDeleteAll }) {
+  const [deleted, flashDeleted] = useFlash(2600)
   const open = rows.filter((r) => !r.done)
   const dated = open.filter((r) => r.due).slice(0, 3)
   const pending = open.filter((r) => !r.due).length
@@ -366,11 +571,54 @@ function Home({ t, lang, go, rows }) {
           </li>
         ))}
       </ol>
-      <div className="quiet-links">
+
+      <section className="notes-briefs" aria-labelledby="home-notes">
+        <div className="steps-head">
+          <h2 className="h2" id="home-notes">{t(ui.notes.title)}</h2>
+          {noteCount > 0 && <span className="progress num">{noteCount}</span>}
+        </div>
+        {notes.length === 0 ? (
+          <p className="muted">{t(ui.home.notesEmpty)}</p>
+        ) : (
+          <ul className="brief-list">
+            {notes.map((v) => (
+              <li key={v.id}>
+                <button type="button" className="brief" onClick={() => go('notes')}>
+                  <span className="brief-head">
+                    <span className="brief-date num">{v.visitDate || t(ui.notes.undated)}</span>
+                    {v.current && <span className="badge is-near">{t(ui.home.currentVisit)}</span>}
+                  </span>
+                  <span className="brief-clinic">{hasText(v.clinic) ? v.clinic : t(ui.notes.noClinic)}</span>
+                  <span className="brief-said">{hasText(v.said) ? v.said : t(ui.notes.noText)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <button type="button" className="link" onClick={() => go('notes')}>
-          <Icon name="notes" /> {t(ui.home.notesLink)}
+          <Icon name="notes" /> {t(noteCount > 0 ? ui.home.seeAllNotes : ui.home.notesLink)}
         </button>
-      </div>
+      </section>
+
+      <section className="card privacy" aria-labelledby="home-privacy">
+        <h2 className="h2 privacy-title" id="home-privacy">
+          <Icon name="lock" /> {t(ui.privacy.title)}
+        </h2>
+        <ul className="privacy-points">
+          {ui.privacy.points.map((point) => <li key={point.en}>{t(point)}</li>)}
+        </ul>
+        <p className="muted">{t(ui.privacy.hosting)}</p>
+        <ConfirmButton
+          className="btn ghost danger"
+          label={t(ui.privacy.deleteAll)}
+          confirmLabel={t(ui.privacy.confirmDeleteAll)}
+          onConfirm={() => {
+            onDeleteAll()
+            flashDeleted()
+          }}
+        />
+        <p className="privacy-status" role="status">{deleted ? t(ui.privacy.deleted) : ''}</p>
+      </section>
     </section>
   )
 }
@@ -488,6 +736,7 @@ function Before({ t, lang, go, packed, setPacked }) {
         </>
       )}
 
+      <StageNav current="before" t={t} go={go} />
       <TermsLink t={t} go={go} />
     </section>
   )
@@ -649,14 +898,13 @@ function Visit({ t, go, form, setForm }) {
         {missing.length > 0 && <p className="muted">{t(ui.visit.copyNeedsTranslation)}</p>}
       </div>
       <p className="tip">{t(ui.visit.tip)}</p>
+      <StageNav current="visit" t={t} go={go} />
       <TermsLink t={t} go={go} />
     </section>
   )
 }
 
-function After({ t, lang, go, picked, setPicked, done, setDone, tracker }) {
-  const [hintOff, setHintOff] = useStored('wp.afterHintOff', false)
-  const [saved, flash] = useFlash()
+function After({ t, lang, go, picked, setPicked, hintOff, setHintOff, done, setDone, tracker }) {
 
   const toggle = (id) => {
     setHintOff(true)
@@ -724,14 +972,11 @@ function After({ t, lang, go, picked, setPicked, done, setDone, tracker }) {
               )
             })}
           </ol>
+          {a.id === 'pathology' && <PathologyQuickActions t={t} />}
         </div>
       ))}
 
-      {chosen.length > 0 && (
-        <button type="button" className="btn" onClick={() => { flash(); go('notes') }}>
-          <Icon name="notes" /> {saved ? t(ui.after.saved) : t(ui.after.saveNotes)}
-        </button>
-      )}
+      <StageNav current="after" t={t} go={go} />
       <TermsLink t={t} go={go} />
     </section>
   )
@@ -778,9 +1023,9 @@ function Terms({ t, lang }) {
   )
 }
 
-function Notes({ t, lang, go, picked, done, setDone, note, setNote, rows, visitDate, setVisitDate, reset }) {
+function Notes({ t, lang, go, picked, done, setDone, note, setNote, rows, visitDate, setVisitDate, visits, startNewVisit, deleteVisit }) {
   const [copied, flashCopied] = useFlash()
-  const [cleared, flashCleared] = useFlash()
+  const [started, flashStarted] = useFlash()
   const n = note ?? exampleNote
   const set = (patch) => setNote({ ...n, ...patch, example: false })
   const chosen = artefacts.filter((a) => picked.includes(a.id))
@@ -806,6 +1051,7 @@ function Notes({ t, lang, go, picked, done, setDone, note, setNote, rows, visitD
     <section className="screen">
       <h1 className="display">{t(ui.notes.title)}</h1>
       <p className="lead">{t(ui.notes.lead)}</p>
+      <h2 className="h2">{t(ui.notes.current)}</h2>
       {n.example && <p className="hint">{t(ui.notes.example)}</p>}
 
       <div className="form">
@@ -869,10 +1115,73 @@ function Notes({ t, lang, go, picked, done, setDone, note, setNote, rows, visitD
         <button type="button" className="btn" onClick={() => copyText(asText()).then(flashCopied)}>
           <Icon name="copy" /> {copied ? t(ui.visit.copied) : t(ui.notes.copy)}
         </button>
-        <button type="button" className="btn ghost" onClick={() => { reset(); flashCleared() }}>
-          {cleared ? t(ui.notes.cleared) : t(ui.notes.clear)}
+        <button type="button" className="btn ghost" onClick={() => { startNewVisit(); flashStarted() }}>
+          {started ? t(ui.notes.started) : t(ui.notes.newVisit)}
         </button>
       </div>
+      <p className="muted">{t(ui.notes.newVisitHint)}</p>
+
+      <h2 className="h2">{t(ui.notes.earlier)}</h2>
+      {visits.length === 0 ? (
+        <p className="muted">{t(ui.notes.earlierEmpty)}</p>
+      ) : (
+        <ul className="visit-records">
+          {visits.map((v) => (
+            <li key={v.id}>
+              <details className="visit-record">
+                <summary>
+                  <span className="brief-head">
+                    <span className="brief-date num">{v.visitDate || t(ui.notes.undated)}</span>
+                  </span>
+                  <span className="brief-clinic">{hasText(v.clinic) ? v.clinic : t(ui.notes.noClinic)}</span>
+                  <span className="brief-said">{hasText(v.said) ? v.said : t(ui.notes.noText)}</span>
+                </summary>
+                <div className="visit-record-body">
+                  {hasText(v.said) && (
+                    <div>
+                      <span className="label">{t(ui.notes.said)}</span>
+                      <p>{v.said}</p>
+                    </div>
+                  )}
+                  {hasText(v.comeBack) && (
+                    <div>
+                      <span className="label">{t(ui.notes.comeBack)}</span>
+                      <p>{v.comeBack}</p>
+                    </div>
+                  )}
+                  {v.picked.length > 0 && (
+                    <div>
+                      <span className="label">{t(ui.notes.leftWith)}</span>
+                      <p>{v.picked.map((id) => t(artefacts.find((a) => a.id === id)?.label)).join(' · ')}</p>
+                    </div>
+                  )}
+                  {v.stepsTotal > 0 && <p className="muted num">{v.stepsDone}/{v.stepsTotal} {t(ui.notes.stepsDone)}</p>}
+                  {v.upcoming.length > 0 && (
+                    <div>
+                      <span className="label">{t(ui.tracker.title)}</span>
+                      <ul className="loop-list">
+                        {v.upcoming.map((d) => (
+                          <li key={`${d.due}-${d.label.en}`}>
+                            <span className="loop-label">{t(d.label)}</span>
+                            <span className="loop-date num">{d.due}</span>
+                            <Badge diff={daysUntil(d.due)} lang={lang} />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <ConfirmButton
+                    className="btn ghost small danger"
+                    label={t(ui.notes.delete)}
+                    confirmLabel={t(ui.notes.confirmDelete)}
+                    onConfirm={() => deleteVisit(v.id)}
+                  />
+                </div>
+              </details>
+            </li>
+          ))}
+        </ul>
+      )}
       <TermsLink t={t} go={go} />
     </section>
   )
@@ -883,7 +1192,10 @@ function Notes({ t, lang, go, picked, done, setDone, note, setNote, rows, visitD
 export default function App() {
   const [lang, setLang] = useStored('wp.lang', 'en')
   const [tab, setTab] = useState('home')
+  const [stage, setStage] = useStored('wp.stage', 'before')
+  const [visits, setVisits] = useStored('wp.visits', [])
   const [picked, setPicked] = useStored('wp.picked', ['prescription', 'referral'])
+  const [afterHintOff, setAfterHintOff] = useStored('wp.afterHintOff', false)
   const [done, setDone] = useStored('wp.done', {})
   const [note, setNote] = useStored('wp.note', null)
   const [visitDate, setVisitDate] = useStored('wp.visitDate', '')
@@ -903,10 +1215,18 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [tab])
 
-  const go = (next) => setTab(next)
-  const tabs = ['home', 'before', 'visit', 'after', 'notes']
+  const stages = ['before', 'visit', 'after']
+  const go = (next) => {
+    if (stages.includes(next)) setStage(next)
+    setTab(next)
+  }
+  const tabs = [
+    { id: 'home', icon: 'home', label: ui.tabs.home, target: 'home', on: tab === 'home' },
+    { id: 'guide', icon: 'guide', label: ui.tabs.guide, target: stages.includes(stage) ? stage : 'before', on: stages.includes(tab) },
+    { id: 'notes', icon: 'notes', label: ui.tabs.notes, target: 'notes', on: tab === 'notes' },
+  ]
 
-  const reset = () => {
+  const resetCurrent = () => {
     setNote({ example: false, clinic: '', said: '', comeBack: '' })
     setDone({})
     setPicked([])
@@ -915,17 +1235,33 @@ export default function App() {
     setClockDone({})
     setPrepForm({ symptom: '', since: 'today', severity: 0, trend: 'same', tried: '', questions: [], isExample: false, translations: {} })
     setPacked({})
+    setAfterHintOff(true)
   }
+
+  const current = visitSummary({ note, visitDate, picked, picksAreExample: !afterHintOff, done, rows })
+  const currentHasContent = [current.clinic, current.said, current.comeBack].some(hasText) || current.visitDate !== ''
+  const startNewVisit = () => {
+    if (currentHasContent) {
+      setVisits((list) => [{ id: Date.now().toString(36), savedAt: new Date().toISOString(), ...current }, ...list])
+    }
+    resetCurrent()
+  }
+  const deleteVisit = (id) => setVisits((list) => list.filter((v) => v.id !== id))
+  const deleteAll = () => {
+    setVisits([])
+    resetCurrent()
+  }
+  const noteList = [...(currentHasContent ? [{ id: 'current', current: true, ...current }] : []), ...visits]
 
   const tracker = { rows, visitDate, setVisitDate, dates, setDates, clockDone, setClockDone }
 
   let screen
-  if (tab === 'home') screen = <Home t={t} lang={lang} go={go} rows={rows} />
+  if (tab === 'home') screen = <Home t={t} lang={lang} go={go} rows={rows} notes={noteList.slice(0, 3)} noteCount={noteList.length} onDeleteAll={deleteAll} />
   else if (tab === 'before') screen = <Before t={t} lang={lang} go={go} packed={packed} setPacked={setPacked} />
   else if (tab === 'visit') screen = <Visit t={t} go={go} form={prepForm} setForm={setPrepForm} />
-  else if (tab === 'after') screen = <After t={t} lang={lang} go={go} picked={picked} setPicked={setPicked} done={done} setDone={setDone} tracker={tracker} />
+  else if (tab === 'after') screen = <After t={t} lang={lang} go={go} picked={picked} setPicked={setPicked} hintOff={afterHintOff} setHintOff={setAfterHintOff} done={done} setDone={setDone} tracker={tracker} />
   else if (tab === 'terms') screen = <Terms t={t} lang={lang} />
-  else screen = <Notes t={t} lang={lang} go={go} picked={picked} done={done} setDone={setDone} note={note} setNote={setNote} rows={rows} visitDate={visitDate} setVisitDate={setVisitDate} reset={reset} />
+  else screen = <Notes t={t} lang={lang} go={go} picked={picked} done={done} setDone={setDone} note={note} setNote={setNote} rows={rows} visitDate={visitDate} setVisitDate={setVisitDate} visits={visits} startNewVisit={startNewVisit} deleteVisit={deleteVisit} />
 
   return (
     <div className="app" lang={lang === 'zh' ? 'zh-CN' : 'en-AU'}>
@@ -949,10 +1285,10 @@ export default function App() {
       </footer>
 
       <nav className="tabbar" aria-label="Sections">
-        {tabs.map((id) => (
-          <button key={id} type="button" className={tab === id ? 'is-on' : ''} aria-current={tab === id ? 'page' : undefined} onClick={() => go(id)}>
-            <Icon name={id} />
-            <span>{t(ui.tabs[id])}</span>
+        {tabs.map((item) => (
+          <button key={item.id} type="button" className={item.on ? 'is-on' : ''} aria-current={item.on ? 'page' : undefined} onClick={() => go(item.target)}>
+            <Icon name={item.icon} />
+            <span>{t(item.label)}</span>
           </button>
         ))}
       </nav>

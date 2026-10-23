@@ -16,6 +16,7 @@ export const ui = {
     after: { en: 'After', zh: '就诊后' },
     terms: { en: 'Terms', zh: '术语' },
     notes: { en: 'My notes', zh: '我的笔记' },
+    guide: { en: 'Visit guide', zh: '就诊流程' },
   },
   home: {
     title: { en: 'Where are you in your visit?', zh: '你现在走到哪一步了？' },
@@ -29,6 +30,12 @@ export const ui = {
     loopsMore: { en: 'See all dates', zh: '查看全部日期' },
     pendingOne: { en: 'date still to enter', zh: '个日期还没填' },
     pendingMany: { en: 'dates still to enter', zh: '个日期还没填' },
+    currentVisit: { en: 'This visit', zh: '这次就诊' },
+    seeAllNotes: { en: 'See all notes', zh: '查看全部笔记' },
+    notesEmpty: {
+      en: 'No notes yet. After a visit, write down what the doctor said while you remember it.',
+      zh: '还没有笔记。看完医生后，趁还记得把医生说的话写下来。',
+    },
   },
   stages: {
     before: {
@@ -43,6 +50,11 @@ export const ui = {
       title: { en: 'After the doctor', zh: '看完医生' },
       q: { en: 'I have a prescription, a referral, a receipt. What next, and by when?', zh: '手里有处方、转诊信、收据，然后呢？什么时候之前？' },
     },
+  },
+  stageNav: {
+    label: { en: 'Move between visit stages', zh: '在就诊阶段之间切换' },
+    prev: { en: 'Previous', zh: '上一步' },
+    next: { en: 'Next', zh: '下一步' },
   },
   before: {
     sections: {
@@ -135,9 +147,8 @@ export const ui = {
     stepsTitle: { en: 'Your next steps', zh: '你的下一步' },
     empty: { en: 'Select at least one item above.', zh: '先在上面选至少一项。' },
     progress: { en: 'done', zh: '已完成' },
-    saveNotes: { en: 'Keep these in my notes', zh: '存到我的笔记' },
-    saved: { en: 'Added to my notes', zh: '已加入我的笔记' },
     sourceLabel: { en: 'Source', zh: '来源' },
+    reviewedLabel: { en: 'Reviewed', zh: '核对日期' },
   },
   tracker: {
     title: { en: 'Dates to watch', zh: '要盯的日期' },
@@ -146,11 +157,26 @@ export const ui = {
       zh: '按就诊日期算出来的。只存在这台手机上，会一直显示在首页，直到你勾掉。',
     },
     visitDate: { en: 'Visit date', zh: '就诊日期' },
+    pickDate: { en: 'Choose a date', zh: '选择日期' },
     today: { en: 'Today', zh: '今天' },
     needDate: { en: 'Enter the visit date and the dates below will be worked out from it.', zh: '填上就诊日期，下面的日期就会算出来。' },
     notSet: { en: 'Not entered yet', zh: '还没填' },
     clear: { en: 'Clear', zh: '清除' },
     done: { en: 'Done', zh: '完成' },
+    
+    invalidDate: {
+      en: 'Please enter a valid calendar date.',
+      zh: '请输入有效的日历日期。',
+    },
+    futureVisitDate: {
+      en: 'The visit date cannot be in the future.',
+      zh: '就诊日期不能晚于今天。',
+    },
+    invalidTaskDate: {
+      en: 'Enter a valid date on or after the GP visit.',
+      zh: '请输入不早于 GP 就诊日期的有效日期。',
+    },
+
   },
   terms: {
     title: { en: 'Terms you will hear', zh: '你会听到的词' },
@@ -165,9 +191,10 @@ export const ui = {
   notes: {
     title: { en: 'My notes', zh: '我的笔记' },
     lead: {
-      en: 'Saved only on this phone. Nothing is uploaded, and nobody else can see it.',
-      zh: '只保存在这台手机上。不会上传，别人看不到。',
+      en: 'Saved only in this browser on this phone. Nothing is uploaded.',
+      zh: '只保存在这台手机的浏览器里，不会上传。',
     },
+    current: { en: 'This visit', zh: '这次就诊' },
     example: { en: 'Example note. Edit any field to replace it.', zh: '示例笔记。改任意一项就会替换。' },
     clinic: { en: 'Clinic', zh: '诊所' },
     said: { en: 'What the doctor said', zh: '医生说了什么' },
@@ -177,8 +204,52 @@ export const ui = {
     steps: { en: 'Next steps from this visit', zh: '这次就诊的下一步' },
     noSteps: { en: 'No steps yet. Choose what you left with on the After screen.', zh: '还没有步骤。去"就诊后"选你带走了什么。' },
     copy: { en: 'Copy as text', zh: '复制为文字' },
-    clear: { en: 'Clear and start a new visit', zh: '清空，记录新的一次就诊' },
-    cleared: { en: 'Cleared', zh: '已清空' },
+    newVisit: { en: 'Start a new visit', zh: '记录新的一次就诊' },
+    started: { en: 'New visit started', zh: '已开始新的记录' },
+    newVisitHint: {
+      en: 'Starting a new visit keeps this one under Earlier visits, so nothing is lost.',
+      zh: '开始新的记录时，这次的笔记会保存到"以前的就诊"，不会丢失。',
+    },
+    earlier: { en: 'Earlier visits', zh: '以前的就诊' },
+    earlierEmpty: {
+      en: 'Nothing here yet. Earlier visits appear here after you start a new one.',
+      zh: '这里还是空的。开始记录新的一次就诊后，以前的就诊会出现在这里。',
+    },
+    undated: { en: 'No visit date', zh: '没填就诊日期' },
+    noClinic: { en: 'Clinic not recorded', zh: '没记诊所' },
+    noText: { en: 'No notes written', zh: '没有写笔记' },
+    leftWith: { en: 'Left with', zh: '带走的东西' },
+    stepsDone: { en: 'next steps done', zh: '个下一步已完成' },
+    delete: { en: 'Delete this visit', zh: '删除这次记录' },
+    confirmDelete: { en: 'Tap again to delete', zh: '再点一次确认删除' },
+  },
+  privacy: {
+    title: { en: 'Your data stays on this phone', zh: '你的数据只留在这台手机上' },
+    points: [
+      {
+        en: 'What you enter, including symptoms, notes and dates, is saved only in this browser. There is no account, and Waypoint does not send it to any server.',
+        zh: '你输入的内容，包括症状、笔记和日期，只保存在这个浏览器里。没有账号，Waypoint 也不会把它发送到任何服务器。',
+      },
+      {
+        en: 'Translation runs on the phone too, so your Chinese notes are not sent to a translation service.',
+        zh: '翻译也在手机上完成，你的中文记录不会发给任何翻译服务。',
+      },
+      {
+        en: 'Anyone who uses this browser can open your notes. On a shared phone, use made-up details or delete your data when you finish.',
+        zh: '用这个浏览器的人都能打开你的笔记。在共用的手机上，请用虚构的信息，或用完后删除数据。',
+      },
+      {
+        en: 'You stay in control. Delete a single visit in My notes, or everything with the button below.',
+        zh: '数据由你决定。可以在"我的笔记"里删除某一次记录，也可以用下面的按钮全部删除。',
+      },
+    ],
+    hosting: {
+      en: 'The page is hosted on GitHub Pages and loads fonts from Google Fonts. These services can see that the page was opened, but not what you type.',
+      zh: '页面托管在 GitHub Pages，字体来自 Google Fonts。它们能看到页面被打开，但看不到你输入的内容。',
+    },
+    deleteAll: { en: 'Delete everything on this phone', zh: '删除这台手机上的全部数据' },
+    confirmDeleteAll: { en: 'Tap again to delete everything', zh: '再点一次，确认全部删除' },
+    deleted: { en: 'All your data on this phone has been deleted.', zh: '这台手机上的数据已全部删除。' },
   },
   owners: {
     you: { en: 'You', zh: '你' },
@@ -201,11 +272,36 @@ export const ui = {
 
 export const sources = {
   healthdirect: { en: 'Healthdirect', zh: 'Healthdirect' },
+  healthdirectPathology: {
+    en: 'Healthdirect',
+    zh: 'Healthdirect',
+    url: 'https://www.healthdirect.gov.au/procedures/diagnostic-tests-and-scans/understanding-pathology-tests',
+    linkLabel: { en: 'Open official pathology guidance', zh: '打开官方病理检查指南' },
+    reviewed: '2026-10-17',
+  },
   oshc: { en: 'Your OSHC provider', zh: '你的 OSHC 保险公司' },
   clinic: { en: 'Your clinic', zh: '你的诊所' },
   uni: { en: 'Your university', zh: '你的学校' },
   pbs: { en: 'Services Australia (PBS)', zh: 'Services Australia（PBS）' },
   medicare: { en: 'Services Australia (Medicare referral rules)', zh: 'Services Australia（Medicare 转诊规定）' },
+}
+
+export const pathologyQuickActions = {
+  title: { en: 'Ready to act?', zh: '准备开始行动？' },
+  lead: {
+    en: 'Find a collection centre, then copy these English questions before you call or visit.',
+    zh: '先查找采样点，再复制这些英文问题，方便打电话或到现场询问。',
+  },
+  finderLabel: { en: 'Find a collection centre', zh: '查找采样点' },
+  finderUrl: 'https://www.healthdirect.gov.au/australian-health-services',
+  copyLabel: { en: 'Copy questions to ask', zh: '复制英文询问问题' },
+  copiedLabel: { en: 'Questions copied', zh: '英文问题已复制' },
+  questions: [
+    { en: 'Do I need an appointment for this test?', zh: '这项检查需要预约吗？' },
+    { en: 'Do I need to fast or prepare in any other way?', zh: '我需要空腹或做其他准备吗？' },
+    { en: 'Do you direct bill my OSHC provider, and could there be a gap?', zh: '你们是否与我的 OSHC 直接结算？我是否可能需要支付差额？' },
+    { en: 'How and when will the results be sent to my GP?', zh: '检查结果会以什么方式、在什么时候发送给我的 GP？' },
+  ],
 }
 
 export const services = [
@@ -423,7 +519,7 @@ export const artefacts = [
       {
         owner: 'you',
         text: { en: 'Take the form to a pathology collection centre, not back to the GP clinic. Search the lab name printed on the form.', zh: '拿化验单去采样点（collection centre），不是回 GP 诊所。按单上印的化验机构名搜索。' },
-        source: 'healthdirect',
+        source: 'healthdirectPathology',
       },
       {
         owner: 'you',
