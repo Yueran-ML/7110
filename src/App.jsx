@@ -1268,7 +1268,7 @@ export default function App() {
     <div className="app" lang={lang === 'zh' ? 'zh-CN' : 'en-AU'}>
       <header className="top">
         <button type="button" className="brand" onClick={() => go('home')} aria-label="Waypoint home">
-          <span className="brand-mark" aria-hidden="true" />
+          <img className="brand-mark" src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" width="30" height="30" />
           <span className="brand-name">{t(ui.appName)}</span>
           <span className="brand-tag">{t(ui.tagline)}</span>
         </button>

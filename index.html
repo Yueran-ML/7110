@@ -15,8 +15,33 @@
     <meta name="apple-mobile-web-app-title" content="Waypoint" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Overpass:wght@400..900&family=Overpass+Mono:wght@400..700&family=Noto+Sans+SC:wght@400;700&display=swap" />
+    <style>
+      /* Launch screen: painted from this file alone, before the app bundle loads. */
+      #splash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 24px; text-align: center; background: #edf1f7; color: #0c1a33; transition: opacity 0.35s ease; }
+      #splash img { width: 112px; height: 112px; margin-bottom: 18px; border-radius: 25px; box-shadow: 0 2px 6px rgba(13, 33, 71, 0.08), 0 18px 40px rgba(13, 33, 71, 0.14); animation: splash-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+      #splash .splash-name { font: 900 34px/1.05 'Overpass', system-ui, sans-serif; letter-spacing: -0.01em; animation: splash-up 0.6s 0.12s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+      #splash .splash-tag { font: 400 15px/1.4 'Atkinson Hyperlegible', system-ui, sans-serif; color: #3d4961; animation: splash-up 0.6s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+      #splash .splash-tag[lang] { font-family: 'Noto Sans SC', system-ui, sans-serif; }
+      #splash.is-done { opacity: 0; pointer-events: none; }
+      @keyframes splash-in { from { opacity: 0; transform: scale(0.88); } }
+      @keyframes splash-up { from { opacity: 0; transform: translateY(8px); } }
+      @media (prefers-color-scheme: dark) {
+        #splash { background: #070c17; color: #e9eefa; }
+        #splash img { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5); }
+        #splash .splash-tag { color: #a9b5ce; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #splash, #splash * { animation: none !important; transition: none !important; }
+      }
+    </style>
   </head>
   <body>
+    <div id="splash" aria-hidden="true">
+      <img src="./icons/icon-512.png" alt="" width="112" height="112" />
+      <div class="splash-name">Waypoint</div>
+      <div class="splash-tag">Your GP visit, one step at a time</div>
+      <div class="splash-tag" lang="zh-CN">看 GP，一步一步来</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
